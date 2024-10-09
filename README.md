@@ -2,7 +2,7 @@
 
 ## Result at 300 epoch:
 
-![Tensorboard Display](generative_adversarial_network/step_300.png)
+![Tensorboard Display](./step_300.png)
 ## Overview
 This README provides a detailed explanation of a simple Generative Adversarial Network (GAN) implementation in PyTorch. We will go step by step through the code, highlighting the key concepts, dimensions, and processes involved in training the GAN. The code consists of two main components: the **Generator** and the **Discriminator**. Throughout this guide, we will also address some crucial questions about the architecture and explain the rationale behind important decisions made during training.
 
