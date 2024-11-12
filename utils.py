@@ -4,6 +4,7 @@ import torch.optim as optim
 import torchvision
 from torch.utils.tensorboard import SummaryWriter
 import matplotlib.pyplot as plt
+import torch.nn.functional as F
 
 def train_fcgan(generator, discriminator, loader, device, num_epochs=100, z_dimension=64, lr=3e-4):
     optim_disc = optim.Adam(discriminator.parameters(), lr=lr)
@@ -61,12 +62,12 @@ def train_fcgan(generator, discriminator, loader, device, num_epochs=100, z_dime
     writer_real.close()
 
 def train_dcgan(generator, discriminator, loader, device, num_epochs=5, z_dim=100, lr_disc=1e-4, lr_gen=2e-4):
-    # Optimizers and loss function
+    
     optim_disc = optim.Adam(discriminator.parameters(), lr=lr_disc, betas=(0.5, 0.999))
     optim_gen = optim.Adam(generator.parameters(), lr=lr_gen, betas=(0.5, 0.999))
     criterion = nn.BCELoss()
 
-    # TensorBoard writers
+
     writer_fake = SummaryWriter(log_dir='./runs/DCGAN_CIFAR10/fake')
     writer_real = SummaryWriter(log_dir='./runs/DCGAN_CIFAR10/real')
 
@@ -131,3 +132,37 @@ def plot_loss_curves(lossD_list, lossG_list):
     plt.legend()
     plt.show()
 
+def latent_space_interpolation(generator, z_dim, num_steps=10, device='cuda'):
+    # Ensure the generator is on the same device as the input
+    generator.to(device)
+    
+    # Generate two distinct random latent vectors
+    z1 = torch.randn(1, z_dim).to(device)
+    z2 = torch.randn(1, z_dim).to(device)
+    
+    # Linear interpolation between z1 and z2
+    interpolation_steps = torch.linspace(0, 1, num_steps).to(device)
+    interpolated_latents = [(1 - alpha) * z1 + alpha * z2 for alpha in interpolation_steps]
+    
+    # Generate images for each interpolated latent vector
+    generated_images = [generator(latent).view(28, 28).cpu().detach().numpy() for latent in interpolated_latents]
+    
+    # Plotting the interpolation results with improved layout
+    fig, axes = plt.subplots(1, num_steps, figsize=(2 * num_steps, 2))
+    for i, img in enumerate(generated_images):
+        axes[i].imshow(img, cmap='gray')
+        axes[i].axis('off')
+    
+    plt.suptitle("Latent Space Interpolation (Refined)")
+    plt.show()
+
+    
+def vae_loss(x_recon, x, mu, logvar):
+    # Reconstruction loss
+    recon_loss = F.binary_cross_entropy(x_recon, x.view(-1, 784), reduction='sum')
+    
+    # KL-divergence
+    kl_div = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
+    
+    # ELBO loss
+    return recon_loss + kl_div, recon_loss, kl_div
